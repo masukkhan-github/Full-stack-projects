@@ -5,10 +5,17 @@ let timeOnline = {};  // track when a user connected
 const MAX_HISTORY = 50; // keep only last 50 messages per room
 
 export const connectToSocket = (server) => {
-  const io = new Server(server);
+  const io = new Server(server,{
+    cors: {
+      origin: "*",
+      methods:["GET","POST"],
+      allowedHeaders: ["*"],
+      credentials: true
+    }
+  });
 
   io.on("connection", (socket) => {
-    // ✅ user joins a call/room
+    // user joins a call/room
     socket.on("join-call", (path) => {
       socket.join(path);
       timeOnline[socket.id] = new Date();
@@ -29,12 +36,12 @@ export const connectToSocket = (server) => {
       }
     });
 
-    // ✅ signaling for WebRTC (used to exchange SDP/ICE)
+    // signaling for WebRTC (used to exchange SDP/ICE)
     socket.on("signal", (toId, message) => {
       io.to(toId).emit("signal", socket.id, message);
     });
 
-    // ✅ handle chat messages
+    // handle chat messages
     socket.on("chat-message", (data, sender, path) => {
       if (!messages[path]) messages[path] = [];
 
@@ -50,7 +57,7 @@ export const connectToSocket = (server) => {
       socket.to(path).emit("chat-message", data, sender, socket.id);
     });
 
-    // ✅ handle disconnect
+    //  handle disconnect
     socket.on("disconnect", () => {
       const duration = (new Date() - timeOnline[socket.id]) / 1000;
       console.log(`User ${socket.id} was online for ${duration} seconds`);
