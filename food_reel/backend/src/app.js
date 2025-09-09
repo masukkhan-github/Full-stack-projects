@@ -15,7 +15,8 @@ app.get("/",(req,res)=>{
   res.send("hello get root");
 });
 
-app.use("/api/auth", router)
+app.use("/api/v1/auth", router)
+
 
 
 export default app;

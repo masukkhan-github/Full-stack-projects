@@ -22,12 +22,6 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
     });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
-
-    res.cookie("token", token);
-
     res.status(201).json({
       message: "user created successfully",
       user: {
@@ -36,8 +30,50 @@ export const registerUser = async (req, res) => {
         email: user.email,
       },
     });
-  } catch (err) {
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Register Server error", error});
+  }
+};
+
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+
+    res.cookie("token", token);
+
+    res.status(200).json({
+      message: "User logged in successfully",
+      user: {
+        id: user._id,
+        name: user.fullName,
+        email: user.email,
+      },
+    });
+  } catch (error) {
     console.log(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "login Server error", error });
   }
 };
